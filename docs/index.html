@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RoHIL: Robust Human-in-the-Loop Robot Learning under Visual Variation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* palette derived from method figure: steel-blue header, salmon highlights, sage replay tags, cream bg */
+      --primary:        #4682B4;   /* steel blue – section accents, links */
+      --primary-dark:   #2F5D85;
+      --primary-tint:   #E6F0F8;   /* very light blue – panels */
+      --salmon:         #E89E8A;   /* warm coral – frozen-model highlight */
+      --salmon-tint:    #FBE8E1;
+      --sage:           #8FB979;   /* soft sage green – replay-buffer tag */
+      --sage-tint:      #E6EFDC;
+      --gold:           #D9B66B;
+      --gold-tint:      #F6ECD3;
+
+      --text:           #1F2937;
+      --text-muted:     #4B5563;
+      --text-soft:      #6B7280;
+      --bg:             #FBFAF7;   /* warm cream */
+      --bg-alt:         #F4F1EA;
+      --border:         #E2DDD3;
+      --shadow-sm:      0 1px 3px rgba(31, 41, 55, .06);
+      --shadow-md:      0 6px 24px rgba(31, 41, 55, .08);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--primary); text-decoration: none; transition: color .15s; }
+    a:hover { color: var(--primary-dark); text-decoration: underline; }
+
+    /* ─────────── Hero ─────────── */
+    .hero {
+      background: linear-gradient(180deg, #F0F5FA 0%, var(--bg) 100%);
+      padding: 60px 24px 50px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero-inner { max-width: 920px; margin: 0 auto; }
+
+    .venue-badge {
+      display: inline-block;
+      background: #fff;
+      color: var(--primary);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 999px;
+      border: 1.5px solid var(--primary);
+      margin-bottom: 22px;
+    }
+
+    h1.title {
+      font-family: 'Noto Serif', Georgia, serif;
+      font-size: clamp(1.7rem, 3.6vw, 2.65rem);
+      font-weight: 700;
+      line-height: 1.25;
+      color: var(--primary-dark);
+      margin-bottom: 8px;
+      letter-spacing: -.01em;
+    }
+    h1.title .ours {
+      color: var(--salmon);
+    }
+    h1 .subtitle {
+      display: block;
+      font-size: 0.6em;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-top: 10px;
+      font-style: italic;
+    }
+
+    .authors {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      margin: 22px 0 4px;
+    }
+    .affil {
+      font-size: 0.92rem;
+      color: var(--text-soft);
+      margin-bottom: 28px;
+    }
+
+    .btn-row {
+      display: flex; flex-wrap: wrap; gap: 12px;
+      justify-content: center;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 22px;
+      border-radius: 999px;
+      font-size: 0.92rem;
+      font-weight: 500;
+      transition: all .15s ease;
+      border: 1.5px solid transparent;
+    }
+    .btn:hover { transform: translateY(-1px); text-decoration: none; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); color: #fff; }
+    .btn-outline {
+      background: #fff; color: var(--text);
+      border-color: var(--border);
+    }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-disabled {
+      background: #fff;
+      color: var(--text-soft);
+      border-color: var(--border);
+      cursor: default;
+      pointer-events: none;
+      opacity: 0.85;
+    }
+
+    /* ─────────── Section layout ─────────── */
+    section {
+      padding: 64px 24px;
+    }
+    section.alt { background: var(--bg-alt); }
+    .section-inner { max-width: 1080px; margin: 0 auto; }
+
+    .section-eyebrow {
+      display: inline-block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--primary);
+      padding-bottom: 4px;
+      border-bottom: 2px solid var(--primary);
+      margin-bottom: 16px;
+    }
+
+    h2.section-title {
+      font-family: 'Noto Serif', Georgia, serif;
+      font-size: clamp(1.45rem, 2.6vw, 1.95rem);
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 16px;
+      line-height: 1.3;
+    }
+
+    h3.subsection-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--primary-dark);
+      margin: 28px 0 12px;
+    }
+
+    p.lead {
+      font-size: 1.0rem;
+      color: var(--text-muted);
+      max-width: 880px;
+      margin-bottom: 24px;
+    }
+
+    p.body { color: var(--text); margin-bottom: 14px; }
+    p.body strong { color: var(--primary-dark); }
+
+    /* ─────────── Abstract ─────────── */
+    .abstract-box {
+      background: #fff;
+      border-left: 4px solid var(--primary);
+      border-radius: 6px;
+      padding: 28px 32px;
+      box-shadow: var(--shadow-sm);
+      font-size: 1.0rem;
+      color: var(--text);
+    }
+    .abstract-box p + p { margin-top: 14px; }
+    .abstract-box em {
+      background: linear-gradient(180deg, transparent 60%, var(--gold-tint) 60%);
+      font-style: normal;
+      padding: 0 2px;
+    }
+    .abstract-box strong { color: var(--salmon); font-weight: 700; }
+
+    /* ─────────── Video grids ─────────── */
+    .video-grid {
+      display: grid; gap: 22px;
+    }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    .grid-4 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+
+    /* 2x2 video showcase: two large cards per row, max two rows */
+    .grid-showcase {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 26px;
+    }
+    @media (max-width: 720px) {
+      .grid-showcase { grid-template-columns: 1fr; }
+    }
+    .grid-showcase .video-card video { aspect-ratio: 16/9; }
+
+    .video-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow .2s, transform .2s;
+    }
+    .video-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+
+    .video-card video {
+      width: 100%; display: block;
+      background: #000;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+    }
+    .video-meta {
+      padding: 12px 16px 14px;
+    }
+    .video-meta h4 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .video-meta p {
+      font-size: 0.84rem;
+      color: var(--text-soft);
+      margin: 0;
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: .03em;
+      padding: 3px 9px;
+      border-radius: 999px;
+      margin-bottom: 6px;
+    }
+    .tag-task    { background: var(--primary-tint); color: var(--primary-dark); }
+    .tag-success { background: var(--sage-tint);    color: #4d6e3c; }
+    .tag-failure { background: var(--salmon-tint);  color: #b04a36; }
+    .tag-ours    { background: var(--gold-tint);    color: #87671c; }
+
+    /* ─────────── Academic demo figures (Motivation / Demos) ─────────── */
+    .demo-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 36px 30px;
+      margin-top: 8px;
+    }
+    @media (max-width: 720px) { .demo-grid { grid-template-columns: 1fr; gap: 28px; } }
+
+    .demo-fig {
+      display: flex; flex-direction: column;
+      transition: transform .2s ease;
+    }
+    .demo-fig:hover { transform: translateY(-2px); }
+
+    .demo-frame {
+      position: relative;
+      background: #000;
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--primary);
+      border-radius: 3px;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .07);
+    }
+    .demo-fig.failure .demo-frame { border-top-color: var(--salmon); }
+    .demo-fig.success .demo-frame { border-top-color: var(--sage); }
+
+    .demo-frame video {
+      width: 100%; display: block;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+    }
+    .demo-frame .speed-badge {
+      position: absolute;
+      top: 10px; right: 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: .05em;
+      color: #fff;
+      background: rgba(31, 41, 55, .6);
+      backdrop-filter: blur(6px);
+      padding: 3px 9px;
+      border-radius: 3px;
+      pointer-events: none;
+    }
+
+    figcaption.demo-caption {
+      padding: 14px 4px 0;
+      font-family: 'Noto Serif', Georgia, serif;
+    }
+    .demo-caption .fig-label {
+      font-weight: 700;
+      color: var(--primary-dark);
+      margin-right: 4px;
+      font-size: 1.0rem;
+    }
+    .demo-fig.failure .demo-caption .fig-label { color: var(--salmon); }
+    .demo-fig.success .demo-caption .fig-label { color: var(--sage); filter: brightness(.85); }
+    .demo-caption .fig-title {
+      font-weight: 600;
+      color: var(--text);
+      font-size: 1.0rem;
+    }
+    .demo-caption .fig-desc {
+      font-family: 'Inter', sans-serif;
+      font-style: italic;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      color: var(--text-muted);
+      margin-top: 6px;
+      padding-right: 6px;
+    }
+
+    .speed-note {
+      font-size: 0.85rem;
+      color: var(--text-soft);
+      font-style: italic;
+      margin: 6px 0 22px;
+      letter-spacing: .01em;
+    }
+    .speed-note::before {
+      content: '†';
+      color: var(--primary);
+      font-style: normal;
+      font-weight: 700;
+      margin-right: 6px;
+    }
+
+    /* ─────────── Figures ─────────── */
+    .figure {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+      margin: 16px 0 8px;
+    }
+    .figure img {
+      width: 100%; height: auto;
+      display: block; border-radius: 4px;
+    }
+    .figure-caption {
+      font-size: 0.88rem;
+      color: var(--text-soft);
+      margin-top: 14px;
+      text-align: center;
+      line-height: 1.55;
+    }
+    .figure-caption strong { color: var(--text); font-weight: 600; }
+
+    /* ─────────── Pipeline cards (Framework) ─────────── */
+    .pipeline {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      margin-top: 28px;
+    }
+    .pipeline-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 28px 26px 24px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+      transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease;
+      cursor: default;
+    }
+    .pipeline-card .stage-num {
+      position: absolute;
+      top: 18px;
+      right: 22px;
+      font-family: 'Noto Serif', Georgia, serif;
+      font-size: 2.4rem;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -.03em;
+      pointer-events: none;
+      transition: transform .35s cubic-bezier(.2,.7,.3,1.2), color .35s ease;
+    }
+    .pipeline-card.stage-1 .stage-num { color: var(--primary-tint); }
+    .pipeline-card.stage-2 .stage-num { color: var(--sage-tint); }
+    .pipeline-card.stage-3 .stage-num { color: var(--salmon-tint); }
+
+    .pipeline-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, var(--primary-tint), transparent 55%);
+      opacity: 0;
+      transition: opacity .35s ease;
+      pointer-events: none;
+    }
+    .pipeline-card.stage-2::after { background: radial-gradient(circle at top right, var(--sage-tint), transparent 55%); }
+    .pipeline-card.stage-3::after { background: radial-gradient(circle at top right, var(--salmon-tint), transparent 55%); }
+
+    .pipeline-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 14px 36px rgba(31, 41, 55, .10);
+    }
+    .pipeline-card.stage-1:hover { border-color: var(--primary); }
+    .pipeline-card.stage-2:hover { border-color: var(--sage); }
+    .pipeline-card.stage-3:hover { border-color: var(--salmon); }
+    .pipeline-card:hover::after { opacity: 0.55; }
+    .pipeline-card:hover .stage-num { transform: scale(1.1) translateY(-2px); }
+    .pipeline-card.stage-1:hover .stage-num { color: var(--primary); }
+    .pipeline-card.stage-2:hover .stage-num { color: var(--sage); }
+    .pipeline-card.stage-3:hover .stage-num { color: var(--salmon); }
+
+    .pipeline-card > * { position: relative; z-index: 1; }
+    .pipeline-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 22px; right: 22px;
+      height: 3px;
+      border-radius: 0 0 3px 3px;
+      transition: height .28s ease, left .28s ease, right .28s ease;
+      z-index: 2;
+    }
+    .pipeline-card:hover::before { height: 5px; left: 0; right: 0; border-radius: 0; }
+    .pipeline-card.stage-1::before { background: var(--primary); }
+    .pipeline-card.stage-2::before { background: var(--sage); }
+    .pipeline-card.stage-3::before { background: var(--salmon); }
+    .pipeline-card .stage-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+      margin-bottom: 6px;
+    }
+    .pipeline-card h4 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--primary-dark);
+      margin-bottom: 8px;
+    }
+    .pipeline-card p {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ─────────── Compare layout ─────────── */
+    .compare-block { margin-bottom: 36px; }
+    .compare-block h3.compare-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 14px;
+      padding-left: 10px;
+      border-left: 3px solid var(--primary);
+    }
+
+    /* ─────────── Footer ─────────── */
+    footer {
+      background: var(--bg-alt);
+      border-top: 1px solid var(--border);
+      padding: 36px 24px;
+      text-align: center;
+      font-size: 0.86rem;
+      color: var(--text-soft);
+    }
+    footer p + p { margin-top: 6px; }
+
+    /* ─────────── Responsive ─────────── */
+    @media (max-width: 720px) {
+      section { padding: 48px 20px; }
+      .hero { padding: 48px 20px 36px; }
+      .abstract-box { padding: 22px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════ HERO ═══════════════════════ -->
+<header class="hero">
+  <div class="hero-inner">
+    <div class="venue-badge">NeurIPS 2026 &nbsp;·&nbsp; Under Review</div>
+
+    <h1 class="title">
+      <span class="ours">RoHIL</span>: Robust Human-in-the-Loop<br>
+      Robotic Reinforcement Learning Against Illumination Variations
+      <span class="subtitle">An offline fine-tuning framework with no extra real-robot interaction</span>
+    </h1>
+
+    <div class="btn-row">
+      <a href="#" class="btn btn-disabled" aria-disabled="true">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Paper&nbsp;·&nbsp;Coming soon
+      </a>
+      <a href="#" class="btn btn-disabled" aria-disabled="true">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+        Code&nbsp;·&nbsp;Coming soon
+      </a>
+      <a href="#abstract" class="btn btn-outline">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        Read Abstract
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════════ ABSTRACT ═══════════════════════ -->
+<section id="abstract">
+  <div class="section-inner">
+    <span class="section-eyebrow">Abstract</span>
+    <h2 class="section-title">A One-Shot HIL Run, Amortised Across Many Workstations</h2>
+
+    <div class="abstract-box">
+      <p>
+        Human-in-the-loop reinforcement learning systems achieve near-perfect success on the workstation
+        where they are trained, but collapse when the same robot is moved to a workstation a few meters
+        away due to shifts in the visual input distribution caused by new lamp positions and window light.
+        Re-collecting demonstrations and re-running HIL on every workstation is incompatible with deployment,
+        and naively fine-tuning on shifted-light data triggers catastrophic forgetting of the source workstation.
+        To close this cross-domain gap, we present <strong>RoHIL</strong>, an offline fine-tuning framework
+        that uses no extra real-robot interaction.
+      </p>
+      <p>
+        <strong>RoHIL</strong> combines
+        (i)&nbsp;a <em>world-model-based image relighter</em> that re-synthesises the visual stream of
+        source-workstation trajectories under multiple virtual HDRI environments, leaving actions and
+        rewards real;
+        (ii)&nbsp;<em>Illumination-Retention Replay (IRR)</em>, a data-level anti-forgetting mechanism
+        that interleaves relit adaptation transitions with original-light retention transitions to preserve
+        source-workstation Bellman coverage; and
+        (iii)&nbsp;an <em>anchored Bellman&ndash;actor regulariser</em> that constrains representation
+        and policy drift from the original source-workstation policy.
+        Across four real-robot manipulation tasks under significant cross-workstation illumination
+        variations, <strong>RoHIL</strong> substantially improves shifted-light performance where standard
+        HIL-RL collapses, while preserving source-workstation performance&thinsp;&mdash;&thinsp;eliminating
+        the need to re-collect data and retrain for every new workstation and environment.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ MOTIVATION ═══════════════════════ -->
+<section id="motivation" class="alt">
+  <div class="section-inner">
+    <span class="section-eyebrow">Motivation</span>
+    <h2 class="section-title">HIL Policies Collapse When the Lights Change</h2>
+    <p class="lead">
+      A HIL-SERL policy trained at one workstation reaches near-perfect success there, but moving the same
+      robot a few metres away&nbsp;&mdash;&nbsp;under different lamp positions and daylight&nbsp;&mdash;&nbsp;
+      breaks it. Below: rollouts of the source-workstation policy on four tasks <em>after</em> illumination
+      shift, with no other change. Pixel jitter cannot reproduce these structured changes, demo re-collection
+      is incompatible with deployment, and naive fine-tuning destroys the source policy. <strong>RoHIL</strong>
+      is designed to close this gap without any new robot interaction.
+    </p>
+    <p class="speed-note">All rollouts on this page are played at 3&times; real-time speed.</p>
+
+    <div class="demo-grid">
+      <figure class="demo-fig failure">
+        <div class="demo-frame">
+          <video controls muted loop playsinline preload="metadata">
+            <source src="videos/ram_insertion_relit_failure.mp4" type="video/mp4" />
+          </video>
+          <span class="speed-badge">3&times;</span>
+        </div>
+        <figcaption class="demo-caption">
+          <span class="fig-label">(a)</span><span class="fig-title">RAM Insertion.</span>
+          <p class="fig-desc">Source policy mis-aligns under shifted illumination.</p>
+        </figcaption>
+      </figure>
+
+      <figure class="demo-fig failure">
+        <div class="demo-frame">
+          <video controls muted loop playsinline preload="metadata">
+            <source src="videos/usb_insertion_relit_failure.mp4" type="video/mp4" />
+          </video>
+          <span class="speed-badge">3&times;</span>
+        </div>
+        <figcaption class="demo-caption">
+          <span class="fig-label">(b)</span><span class="fig-title">USB Insertion.</span>
+          <p class="fig-desc">Critic over-estimates Q on relit pixels; insertion fails.</p>
+        </figcaption>
+      </figure>
+
+      <figure class="demo-fig failure">
+        <div class="demo-frame">
+          <video controls muted loop playsinline preload="metadata">
+            <source src="videos/circuit_breaker_relit_failure.mp4" type="video/mp4" />
+          </video>
+          <span class="speed-badge">3&times;</span>
+        </div>
+        <figcaption class="demo-caption">
+          <span class="fig-label">(c)</span><span class="fig-title">Circuit Breaker.</span>
+          <p class="fig-desc">Visual encoder drifts; gripper misses the latch.</p>
+        </figcaption>
+      </figure>
+
+      <figure class="demo-fig failure">
+        <div class="demo-frame">
+          <video controls muted loop playsinline preload="metadata">
+            <source src="videos/table_wiping_relit_failure.mp4" type="video/mp4" />
+          </video>
+          <span class="speed-badge">3&times;</span>
+        </div>
+        <figcaption class="demo-caption">
+          <span class="fig-label">(d)</span><span class="fig-title">Table Wiping.</span>
+          <p class="fig-desc">Specular highlights confuse object detection.</p>
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ FRAMEWORK OVERVIEW ═══════════════════════ -->
+<section id="framework">
+  <div class="section-inner">
+    <span class="section-eyebrow">Framework Overview</span>
+    <h2 class="section-title">Three Stages: Relight, Retain, Anchor</h2>
+    <p class="lead">
+      Starting from an online-best HIL-SERL policy that degrades under lighting shifts, <strong>RoHIL</strong>
+      runs an offline robust fine-tune in three coupled stages. The visual encoder is exposed to
+      illumination-diverse evidence via world-model relighting, while replay-buffer balancing and
+      frozen-source anchors jointly suppress source-domain forgetting at the data, representation, and
+      policy levels.
+    </p>
+
+    <div class="figure">
+      <img src="images/method-1.png" alt="RoHIL framework overview." />
+      <p class="figure-caption">
+        <strong>RoHIL overview.</strong>
+        (a)&nbsp;A world-model relighter re-synthesises the visual stream of source trajectories under
+        multiple HDRI environments while preserving actions and rewards.
+        (b)&nbsp;Offline robust fine-tune with critic
+        <em>L<sub>critic</sub> = L<sub>Bellman</sub> + L<sub>feat</sub></em> and actor
+        <em>L<sub>actor</sub> = L<sub>SAC</sub> + L<sub>mse</sub></em>, anchored on a frozen source policy.
+        (c)&nbsp;Illumination-Retention Replay buffers interleave relit adaptation and original-light
+        retention transitions to preserve source-workstation Bellman coverage.
+      </p>
+    </div>
+
+    <div class="pipeline">
+      <div class="pipeline-card stage-1">
+        <span class="stage-num">01</span>
+        <div class="stage-label">Stage 1</div>
+        <h4>World-Model Relighting</h4>
+        <p>
+          A diffusion-based HDRI-conditioned video relighter re-illuminates recorded RGB streams under
+          four virtual lighting environments. Actions, rewards, and termination labels stay real; only
+          the visual stream changes&nbsp;&mdash;&nbsp;giving illumination-diverse observations from a
+          single source-workstation collection.
+        </p>
+      </div>
+      <div class="pipeline-card stage-2">
+        <span class="stage-num">02</span>
+        <div class="stage-label">Stage 2</div>
+        <h4>Illumination-Retention Replay</h4>
+        <p>
+          IRR keeps the RLPD 50/50 demo/RL split but inserts a retention coefficient
+          <em>α</em>: the RL half mixes original-light and relit transitions, preserving Bellman
+          coverage of the source workstation while supplying illumination-adaptation signal. Sweep
+          identifies <em>α&nbsp;=&nbsp;0.75</em> as the joint optimum.
+        </p>
+      </div>
+      <div class="pipeline-card stage-3">
+        <span class="stage-num">03</span>
+        <div class="stage-label">Stage 3</div>
+        <h4>Anchored Bellman&ndash;Actor Regulariser</h4>
+        <p>
+          A frozen-source feature anchor (<em>L<sub>feat</sub></em>) constrains visual-encoder drift,
+          while a reference-action mean anchor (<em>L<sub>mse</sub></em>) regularises actor pre-tanh
+          means on expert states. Both anchors decay with training to allow late-stage plasticity.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ EXPERIMENTAL RESULTS ═══════════════════════ -->
+<section id="results" class="alt">
+  <div class="section-inner">
+    <span class="section-eyebrow">Experimental Results</span>
+    <h2 class="section-title">Robust to a Full Sweep of Illumination Intensity</h2>
+    <p class="lead">
+      We evaluate <strong>RoHIL</strong> against five HIL-compatible baselines (BC, ACT, HG-DAgger,
+      HIL-SERL, IBRL) on four real-robot manipulation tasks under a controlled lighting-shift gradient.
+      <strong>RoHIL</strong> wins on every task at the headline 60% shift, and stays essentially flat
+      across the full intensity sweep where baselines decay roughly monotonically.
+    </p>
+
+    <h3 class="subsection-title">Lighting-shift gradient on all four tasks</h3>
+    <div class="figure">
+      <img src="images/inference_light_sweep_comparison.png" alt="Inference success across lighting-shift gradient." />
+      <p class="figure-caption">
+        <strong>Lighting-shift sweep.</strong> Each column is one task; rows are success rate,
+        intervention rate, and mean episode duration. Horizontal axis: shift intensity from 0% to 100%.
+        <strong>RoHIL</strong> (dark blue) remains near saturation across the sweep, while HIL-SERL,
+        HG-DAgger, and IBRL all degrade roughly monotonically with shift intensity.
+      </p>
+    </div>
+
+    <h3 class="subsection-title">Cross-method comparison at 60% illumination shift</h3>
+    <div class="figure">
+      <img src="images/comparison_table.png" alt="Cross-method comparison table at 60% illumination shift." />
+      <p class="figure-caption">
+        <strong>Headline at 60% shift</strong> (60 trajectories per cell). SR is success rate; T is
+        mean successful-episode duration in seconds. Best per task in bold.
+        <strong>RoHIL</strong> reaches the highest SR on every task (RAM 1.00, USB 1.00, wiping 0.87,
+        breaker 0.83), while baselines fall below 0.45 on RAM and below 0.5 on the breaker.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ EXPERIMENTAL DEMOS ═══════════════════════ -->
+<section id="demos">
+  <div class="section-inner">
+    <span class="section-eyebrow">Experimental Demos</span>
+    <h2 class="section-title">RoHIL Rollouts Under Shifted Lighting</h2>
+    <p class="lead">
+      Below are real-robot rollouts of the <strong>RoHIL</strong>-fine-tuned policy on each task,
+      executed under workstation lighting that the source policy fails on. The same offline framework
+      is used across all four tasks; no per-task tuning is applied beyond the source-workstation HIL-SERL
+      budgets reported in the paper.
+    </p>
+    <p class="speed-note">All rollouts on this page are played at 3&times; real-time speed.</p>
+
+    <div class="demo-grid">
+      <figure class="demo-fig success">
+        <div class="demo-frame">
+          <video controls muted loop playsinline preload="metadata">
+            <source src="videos/ram_insertion_100.mp4" type="video/mp4" />
+          </video>
+          <span class="speed-badge">3&times;</span>
+        </div>
+        <figcaption class="demo-caption">
+          <span class="fig-label">(a)</span><span class="fig-title">RAM Insertion.</span>
+          <p class="fig-desc">Memory-stick alignment under shifted illumination.</p>
+        </figcaption>
+      </figure>
+
+      <figure class="demo-fig success">
+        <div class="demo-frame">
+          <video controls muted loop playsinline preload="metadata">
+            <source src="videos/usb_insertion_100.mp4" type="video/mp4" />
+          </video>
+          <span class="speed-badge">3&times;</span>
+        </div>
+        <figcaption class="demo-caption">
+          <span class="fig-label">(b)</span><span class="fig-title">USB Insertion.</span>
+          <p class="fig-desc">Sub-millimetre socket alignment under cross-workstation light.</p>
+        </figcaption>
+      </figure>
+
+      <figure class="demo-fig success">
+        <div class="demo-frame">
+          <video controls muted loop playsinline preload="metadata">
+            <source src="videos/circuit_breaker_25.mp4" type="video/mp4" />
+          </video>
+          <span class="speed-badge">3&times;</span>
+        </div>
+        <figcaption class="demo-caption">
+          <span class="fig-label">(c)</span><span class="fig-title">Circuit Breaker.</span>
+          <p class="fig-desc">Latch engagement under specular highlights.</p>
+        </figcaption>
+      </figure>
+
+      <figure class="demo-fig success">
+        <div class="demo-frame">
+          <video controls muted loop playsinline preload="metadata">
+            <source src="videos/table_wiping_10.mp4" type="video/mp4" />
+          </video>
+          <span class="speed-badge">3&times;</span>
+        </div>
+        <figcaption class="demo-caption">
+          <span class="fig-label">(d)</span><span class="fig-title">Table Wiping.</span>
+          <p class="fig-desc">Long-horizon wiping under daylight + spotlight shift.</p>
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ EXPERIMENTAL SETUP ═══════════════════════ -->
+<section id="setup" class="alt">
+  <div class="section-inner">
+    <span class="section-eyebrow">Experimental Setup</span>
+    <h2 class="section-title">Hardware, Cameras, and Lighting Conditions</h2>
+    <p class="lead">
+      All experiments run on a Franka Emika Panda arm with wrist-mounted RealSense cameras and per-task
+      camera configurations. Cross-workstation illumination shift is realised by sweeping a discrete
+      intensity gradient that combines task-light spotlight reconfigurations and daylight-direction
+      changes.
+    </p>
+
+    <h3 class="subsection-title">Per-task camera and workspace layout</h3>
+    <div class="figure">
+      <img src="images/figure6-1.png" alt="Per-task hardware setup with camera placement." />
+      <p class="figure-caption">
+        <strong>Hardware setup.</strong> For each of the four tasks, we annotate the wrist cameras
+        (red), workspace lights (yellow), and side cameras when present. Camera baselines and
+        light placement differ per task, but the same offline <strong>RoHIL</strong> pipeline applies
+        without modification.
+      </p>
+    </div>
+
+    <h3 class="subsection-title">Illumination-shift gradient</h3>
+    <div class="figure">
+      <img src="images/light_intensities_2x5_compact_en.png" alt="Light-intensity gradient across the cross-workstation evaluation sweep." />
+      <p class="figure-caption">
+        <strong>Lighting-shift gradient.</strong> Discrete steps along the deployment-time
+        illumination-shift sweep, including HDRI re-rendering, task-light spotlight reconfiguration,
+        and natural-window-light variations. The 60% shift is used as the headline cross-workstation
+        evaluation point in the cross-method comparison.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ FOOTER ═══════════════════════ -->
+<footer>
+  <p>Project page for an anonymous submission. Paper and code will be released after review.</p>
+</footer>
+
+</body>
+</html>

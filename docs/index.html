@@ -302,6 +302,28 @@
       border-radius: 3px;
       pointer-events: none;
     }
+    .demo-frame .count-badge {
+      position: absolute;
+      top: 10px; left: 10px;
+      display: inline-flex; align-items: center; gap: 5px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: .04em;
+      color: #fff;
+      background: rgba(77, 110, 60, .82);
+      backdrop-filter: blur(6px);
+      padding: 3px 9px;
+      border-radius: 3px;
+      pointer-events: none;
+    }
+    .demo-frame .count-badge .count-num {
+      font-family: 'Noto Serif', Georgia, serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0;
+      line-height: 1;
+    }
 
     figcaption.demo-caption {
       padding: 14px 4px 0;
@@ -328,6 +350,27 @@
       color: var(--text-muted);
       margin-top: 6px;
       padding-right: 6px;
+    }
+    .demo-caption .success-count {
+      display: inline-block;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: .04em;
+      color: #4d6e3c;
+      background: var(--sage-tint);
+      padding: 2px 9px;
+      border-radius: 4px;
+      margin-left: 8px;
+      vertical-align: 1px;
+      white-space: nowrap;
+    }
+    .demo-caption .success-count .count-num {
+      font-family: 'Noto Serif', Georgia, serif;
+      font-weight: 700;
+      font-size: 0.92rem;
+      letter-spacing: 0;
+      margin-right: 2px;
     }
 
     .speed-note {
@@ -745,10 +788,12 @@
           <video controls muted loop playsinline preload="metadata">
             <source src="videos/ram_insertion_100.mp4" type="video/mp4" />
           </video>
+          <span class="count-badge"><span class="count-num">100</span>consecutive successes</span>
           <span class="speed-badge">3&times;</span>
         </div>
         <figcaption class="demo-caption">
           <span class="fig-label">(a)</span><span class="fig-title">RAM Insertion.</span>
+          <span class="success-count"><span class="count-num">100</span>consecutive successes</span>
           <p class="fig-desc">Memory-stick alignment under shifted illumination.</p>
         </figcaption>
       </figure>
@@ -758,10 +803,12 @@
           <video controls muted loop playsinline preload="metadata">
             <source src="videos/usb_insertion_100.mp4" type="video/mp4" />
           </video>
+          <span class="count-badge"><span class="count-num">100</span>consecutive successes</span>
           <span class="speed-badge">3&times;</span>
         </div>
         <figcaption class="demo-caption">
           <span class="fig-label">(b)</span><span class="fig-title">USB Insertion.</span>
+          <span class="success-count"><span class="count-num">100</span>consecutive successes</span>
           <p class="fig-desc">Sub-millimetre socket alignment under cross-workstation light.</p>
         </figcaption>
       </figure>
@@ -771,10 +818,12 @@
           <video controls muted loop playsinline preload="metadata">
             <source src="videos/circuit_breaker_25.mp4" type="video/mp4" />
           </video>
+          <span class="count-badge"><span class="count-num">25</span>consecutive successes</span>
           <span class="speed-badge">3&times;</span>
         </div>
         <figcaption class="demo-caption">
           <span class="fig-label">(c)</span><span class="fig-title">Circuit Breaker.</span>
+          <span class="success-count"><span class="count-num">25</span>consecutive successes</span>
           <p class="fig-desc">Latch engagement under specular highlights.</p>
         </figcaption>
       </figure>
@@ -784,10 +833,12 @@
           <video controls muted loop playsinline preload="metadata">
             <source src="videos/table_wiping_10.mp4" type="video/mp4" />
           </video>
+          <span class="count-badge"><span class="count-num">10</span>consecutive successes</span>
           <span class="speed-badge">3&times;</span>
         </div>
         <figcaption class="demo-caption">
           <span class="fig-label">(d)</span><span class="fig-title">Table Wiping.</span>
+          <span class="success-count"><span class="count-num">10</span>consecutive successes</span>
           <p class="fig-desc">Long-horizon wiping under daylight + spotlight shift.</p>
         </figcaption>
       </figure>
